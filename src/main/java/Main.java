@@ -15,8 +15,14 @@ public class Main {
             1.61803398874989484820458683436563811772030917980576286213544862270526046281890244970720720418939113748475408807538689175212663386222353693179318006076672635443338908659d;
 
     public static void main(String[] args) {
+        //todo lots of cruft
+        //todo some duplicates
+        /* 3-7/3
+            2/3
+            1-1/3
+        */
         double[] constants = new double[]{Math.PI * 2, Math.PI, Math.E, GOLDEN_RATIO /*golden ratio*/, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-        List<String>[] allSumStrings = generateAllSumStrings(14, 3);
+        List<String>[] allSumStrings = generateAllSumStrings(14, 3, new String[]{"log(", "log2(", "log10(", "sqrt(", "cbrt("});
         Map<Double, String> result = generateAllSums(allSumStrings, constants);
         try {
             printSqlInsertStatements(result);
@@ -25,8 +31,8 @@ public class Main {
         }
     }
 
-    private static List<String>[] generateAllSumStrings(int maxLength, int numVars) {
-        Map<Character, List<String>> validMap = generateValidSequenceMap();
+    private static List<String>[] generateAllSumStrings(int maxLength, int numVars, String[] specialOperations) {
+        Map<Character, List<String>> validMap = generateValidSequenceMap(specialOperations);
 
         List<String> allStrings = new ArrayList<>();
         recursivelyGenerateEquationStrings("", allStrings, maxLength, numVars, validMap);
@@ -75,8 +81,8 @@ public class Main {
                 }
                 double result = expression.evaluate();
 
-                // exp4j appears to be inaccurate past 14 digits, so extra digits are rounded off
-                double mult = Math.pow(10, 14);
+                // exp4j appears to be inaccurate past 13 digits, so extra digits are rounded off
+                double mult = Math.pow(10, 13);
                 result = result * mult;
                 result = Math.round(result);
                 result = result / mult;
@@ -151,7 +157,7 @@ public class Main {
         return result;
     }
 
-    private static Map<Character, List<String>> generateValidSequenceMap() {
+    private static Map<Character, List<String>> generateValidSequenceMap(String[] specialOperations) {
         // generate a map of character to next potentially valid token
         // for example, any variable or a closing brace can be proceeded by +,-,*,^,/,)
         Map<Character, List<String>> validMap = new HashMap<>();
@@ -167,14 +173,18 @@ public class Main {
         {
             // (, +, -, *, /, ^
             char[] chars = new char[]{'(', '+', '-', '*', '/', '^'};
-            List<String> nexts = Arrays.asList(DUMMY_VAR, "(", "log(", "log2(", "log10(", "sqrt(", "cbrt(");
+            List<String> nexts = Arrays.asList(DUMMY_VAR, "(");
+            nexts.addAll(Arrays.asList(specialOperations));
             for (char c : chars) {
                 validMap.put(c, nexts);
             }
         }
         {
             // start
-            validMap.put(null, Arrays.asList(DUMMY_VAR, "(", "log(", "log2(", "log10(", "sqrt(", "cbrt("));
+            List<String> nexts = Arrays.asList(DUMMY_VAR, "(");
+            nexts.addAll(Arrays.asList(specialOperations));
+            validMap.put(null, nexts);
+
         }
         return validMap;
     }

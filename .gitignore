@@ -1,3 +1,4 @@
 *.sql
 *.iml
 *.idea/
+*target/

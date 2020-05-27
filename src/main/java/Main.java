@@ -11,18 +11,10 @@ import java.util.*;
 public class Main {
 
     static final String DUMMY_VAR = "v"; // placeholder variable name to be replaced with letters later
-    static final double GOLDEN_RATIO =
-            1.61803398874989484820458683436563811772030917980576286213544862270526046281890244970720720418939113748475408807538689175212663386222353693179318006076672635443338908659d;
-
+    static final double GOLDEN_RATIO=1.618033988749894848204586834365638117720309179805762862135448622705260462818902449707207204189391137484754088075386891752126633862223536931793180060766726d;
     public static void main(String[] args) {
-        //todo lots of cruft
-        //todo some duplicates
-        /* 3-7/3
-            2/3
-            1-1/3
-        */
-        double[] constants = new double[]{Math.PI * 2, Math.PI, Math.E, GOLDEN_RATIO /*golden ratio*/, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-        List<String>[] allSumStrings = generateAllSumStrings(14, 3, new String[]{"log(", "log2(", "log10(", "sqrt(", "cbrt("});
+        double[] constants = new double[]{Math.PI * 2, Math.PI, Math.E, GOLDEN_RATIO /*golden ratio*/, 1, 2, 3, 4, 5, 6};
+        List<String>[] allSumStrings = generateAllSumStrings(14, 3, new String[]{"log(", "sqrt("});
         Map<Double, String> result = generateAllSums(allSumStrings, constants);
         try {
             printSqlInsertStatements(result);
@@ -81,11 +73,8 @@ public class Main {
                 }
                 double result = expression.evaluate();
 
-                // exp4j appears to be inaccurate past 13 digits, so extra digits are rounded off
-                double mult = Math.pow(10, 13);
-                result = result * mult;
-                result = Math.round(result);
-                result = result / mult;
+                // exp4j appears to be inaccurate past 14 digits, so extra digits are rounded off
+                double mult = round(result);
 
                 String existing = valueMap.get(result);
                 if (existing != null) {
@@ -173,7 +162,7 @@ public class Main {
         {
             // (, +, -, *, /, ^
             char[] chars = new char[]{'(', '+', '-', '*', '/', '^'};
-            List<String> nexts = Arrays.asList(DUMMY_VAR, "(");
+            List<String> nexts = new ArrayList<>(Arrays.asList(DUMMY_VAR, "("));
             nexts.addAll(Arrays.asList(specialOperations));
             for (char c : chars) {
                 validMap.put(c, nexts);
@@ -181,7 +170,7 @@ public class Main {
         }
         {
             // start
-            List<String> nexts = Arrays.asList(DUMMY_VAR, "(");
+            List<String> nexts = new ArrayList<>(Arrays.asList(DUMMY_VAR, "("));
             nexts.addAll(Arrays.asList(specialOperations));
             validMap.put(null, nexts);
 
@@ -220,25 +209,7 @@ public class Main {
                         // use the string to index into the list of variables
                         int valueIndex = Integer.parseInt(variableIndexString.charAt(varIndex) + "", constants.length);
                         expression.setVariable(getVariableName(varIndex), constants[valueIndex]);
-                        // need to textual representation of the formula for later :)
-                        String constantString;
-                        switch (valueIndex) {
-                            case 0:
-                                constantString = "tau";
-                                break;
-                            case 1:
-                                constantString = "pi";
-                                break;
-                            case 2:
-                                constantString = "e";
-                                break;
-                            case 3:
-                                constantString = "phi";
-                                break;
-                            default:
-                                constantString = "" + (int) (constants[valueIndex]);
-                        }
-                        equation = equation.replace(getVariableName(varIndex), constantString);
+                        equation = equation.replace(getVariableName(varIndex), getConstantName(constants[valueIndex]));
                     }
                         // evaluate the expression, finally!
                     try {
@@ -249,6 +220,8 @@ public class Main {
                         if (Double.isNaN(res)) continue;
                         int max = 1000; // max of 1000 is probably fine here
                         if (res > max || res < -max) continue;
+
+                        res = round(res);
 
                         // check if there is a simpler version already
                         String existingEquation = allResults.get(res);
@@ -266,6 +239,15 @@ public class Main {
         return allResults;
     }
 
+    private static CharSequence getConstantName(double constant) {
+        // get the textual representation
+        if(constant == GOLDEN_RATIO) return "phi";
+        if(constant == Math.E) return "e";
+        if(constant == Math.PI) return "pi";
+        if(constant == Math.PI*2) return "tau";
+        return (int)constant+"";
+    }
+
     private static void printSqlInsertStatements(Map<Double, String> result) throws IOException {
         DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
         df.setMaximumFractionDigits(100);
@@ -279,5 +261,13 @@ public class Main {
                 }
         );
         myWriter.close();
+    }
+
+    private static double round(double val) {
+        // exp4j gets inaccurate around 13 decimal places
+        double mult = Math.pow(10, 13);
+        val = val * mult;
+        val = Math.round(val);
+        return val / mult;
     }
 }

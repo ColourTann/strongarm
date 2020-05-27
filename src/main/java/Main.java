@@ -73,8 +73,7 @@ public class Main {
                 }
                 double result = expression.evaluate();
 
-                // exp4j appears to be inaccurate past 14 digits, so extra digits are rounded off
-                double mult = round(result);
+                result = round(result);
 
                 String existing = valueMap.get(result);
                 if (existing != null) {
@@ -215,13 +214,13 @@ public class Main {
                     try {
                         double res = expression.evaluate();
 
-                        if ((int) res == res) continue; //skip if integer, boring
                         if (Double.isInfinite(res)) continue;
                         if (Double.isNaN(res)) continue;
-                        int max = 1000; // max of 1000 is probably fine here
-                        if (res > max || res < -max) continue;
 
                         res = round(res);
+                        int max = 1000; // max of 1000 is probably fine here
+                        if (res > max || res < -max) continue;
+                        if ((int) res == res) continue; //skip if integer, boring
 
                         // check if there is a simpler version already
                         String existingEquation = allResults.get(res);
